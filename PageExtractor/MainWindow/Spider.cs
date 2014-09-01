@@ -14,6 +14,7 @@ using System.Collections;
 using MainWindow;
 using HTMLAnalysis;
 using TestDatabase;
+using System.Data;
 
 namespace PageExtractor
 {
@@ -461,8 +462,8 @@ namespace PageExtractor
                     }
                     _reqsBusy[index] = true;
                     _workingSignals.StartWorking(index);
-                    depth = _urlsUnload.First().Value;
-                    url = _urlsUnload.First().Key;
+                    depth = _urlsUnload.FirstOrDefault().Value;
+                    url = _urlsUnload.FirstOrDefault().Key;
 
                     if (!_urlsLoaded.ContainsKey(url))
                         _urlsLoaded.Add(url, depth);
@@ -476,7 +477,7 @@ namespace PageExtractor
                 RequestState rs = new RequestState(req, url, depth, index);
 
                 //log 
-                Log_add_searched_html(url);
+                Log_add_searched_html(url,depth);
 
                 var result = req.BeginGetResponse(new AsyncCallback(ReceivedResource), rs);
                 ThreadPool.RegisterWaitForSingleObject(result.AsyncWaitHandle,
@@ -576,7 +577,7 @@ namespace PageExtractor
                     return;
                 }
                 html = rs.Html.ToString();
-                SaveContents(html, url);
+                //SaveContents(html, url);
 
                 //Write a file print info into it
 
@@ -954,7 +955,7 @@ namespace PageExtractor
         }
 
         private int counter_searched_url = 0;
-        private void Log_add_searched_html(string url)
+        private void Log_add_searched_html(string url,int _depth)
         {
             string path = Environment.CurrentDirectory + "\\SearchedURL.txt";
 
@@ -969,7 +970,7 @@ namespace PageExtractor
                     }
 
                     DateTime dt = DateTime.Now;
-                    w.WriteLine(counter_searched_url.ToString() + ". " + dt.ToString() + "\t" + url + "\n");
+                    w.WriteLine(counter_searched_url.ToString() + ". " + dt.ToString() + "\t" + url + "\tDepth:"+_depth.ToString()+"\n");
 
                     counter_searched_url++;
                 }
@@ -1261,11 +1262,18 @@ namespace PageExtractor
             #endregion
 
             //write resule to databse
-            SQLDatabase my_sql_database = new SQLDatabase(".\\SQLEXPRESS", "TestDatabase", "sa", "ly23909475");
+            //SQLDatabase my_sql_database = new SQLDatabase("98.239.198.3,1433\\SQLEXPRESS", "TestDatabase", "sa", "ly23909475");
+            SQLDatabase my_sql_database = new SQLDatabase("127.0.0.1,1433\\SQLEXPRESS", "TestDatabase", "sa", "ly23909475");
 
-            global_database_index++;
+            //get table size
+            string sql_query_table_size = "select count(*) from TestDatabase.dbo.OfficeDepot";
 
-            string sql_query = "INSERT INTO OfficeDepot ([index],URL,ProductName,CurrentPrice,ImageURL,ProductDescription,BrandName,ManufacturerNumber,ManufacturerName,UPCNumber,Model) VALUES (" + global_database_index +",'" + url +"','"+ product_name +"',"+product_price+",'"+product_image_URL+"','"+product_description+"','"+product_brandname+"','"+product_manufacture_number+"','"+product_manufacture_name+"','"+product_upc_number+"','"+product_modelname+"')";
+            DataSet dataset_table_size = my_sql_database.Execute_select_with_DataSet(sql_query_table_size);
+
+            string table_size = dataset_table_size.Tables[0].Rows[0][0].ToString();
+
+
+            string sql_query = "INSERT INTO OfficeDepot ([index],URL,ProductName,CurrentPrice,ImageURL,ProductDescription,BrandName,ManufacturerNumber,ManufacturerName,UPCNumber,Model) VALUES (" + table_size.ToString() + ",'" + url + "','" + product_name + "'," + product_price + ",'" + product_image_URL + "','" + product_description + "','" + product_brandname + "','" + product_manufacture_number + "','" + product_manufacture_name + "','" + product_upc_number + "','" + product_modelname + "')";
 
             int number_affected = my_sql_database.ExecuteNonQuery(sql_query);
 
