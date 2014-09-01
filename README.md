@@ -1,0 +1,3 @@
+SimpleProject
+===========
+Merchandise price storage.
