@@ -149,7 +149,7 @@ namespace PageExtractor
 
         private int _index;
         private string _path = null;
-        private int _maxDepth = 1;
+        private int _maxDepth = 6;
         private int _maxExternalDepth = 0;
         private string _rootUrl = null;
         private string _baseUrl = null;
@@ -581,11 +581,14 @@ namespace PageExtractor
 
                 //Write a file print info into it
 
-                test_write_info_to_file(html, url);
+                //如果这是产品终极页面，那么则不继续寻找其他url
+                if (test_write_info_to_file(html, url))
+                {
+                    _reqsBusy[index] = false;
+                    DispatchWork();
+                    return;
+                }
                 
-
-
-
 
                 string[] links = GetLinks(html);
                  if(links != null)
@@ -834,25 +837,49 @@ namespace PageExtractor
             //return links;
         }
 
-        private bool UrlExists(string url)
+        private bool UrlExists(string url,int url_depth)
         {
-            bool result = _urlsUnload.ContainsKey(url);
-            result |= _urlsLoaded.ContainsKey(url);
+            //判断当前url是否存在。如存在，则比较深度。如果深度更浅，则替换当前哈希表内容并返回true
+            bool temp_result = _urlsUnload.ContainsKey(url);
+            bool result = temp_result || _urlsLoaded.ContainsKey(url);
+
+            if (result && _urlsLoaded.ContainsKey(url))
+            {
+                int old_depth = (int)_urlsLoaded[url];
+                int new_depth = url_depth;
+
+                if (new_depth < old_depth)
+                {
+                    _urlsLoaded[url] = new_depth;
+                    return false;
+                }
+            }
+
             return result;
         }
 
-        private bool UrlAvailable(string url)
+        private bool UrlAvailable(string url,int url_depth)
         {
-            if (UrlExists(url))
+            if (UrlExists(url, url_depth))
             {
                 return false;
             }
             if (url.Contains(".jpg") || url.Contains(".gif")
                 || url.Contains(".png") || url.Contains(".css")
-                || url.Contains(".js") || url.Contains(".do"))
+                || url.Contains(".js"))
             {
                 return false;
             }
+
+            //if base url is from OfficeDepot, the last three letters can't be '.do'
+            if (_baseUrl.ToLower().Contains("officedepot.com"))
+            {
+                if ( (url.Length >= 3 && url.Substring(url.Length - 3, 3).Equals(".do")) || (url.Length >= 4 && url.Substring(url.Length - 4, 4).Equals(".do/")))
+                {
+                    return false;
+                }
+            }
+
             return true;
         }
 
@@ -864,13 +891,6 @@ namespace PageExtractor
             }
             foreach (string url in urls)
             {
-                //if (url.Contains("cleaning-and-breakroom/N=5+549384+588406"))
-                //{
-                //    int asdf = 0;
-                //    asdf++;
-                //}
-
-
                 string cleanUrl = url.Trim();
                 int end = cleanUrl.IndexOf(' ');
                 if (end > 0)
@@ -878,7 +898,7 @@ namespace PageExtractor
                     cleanUrl = cleanUrl.Substring(0, end);
                 }
                 //cleanUrl = cleanUrl.TrimEnd('/');
-                if (UrlAvailable(cleanUrl))
+                if (UrlAvailable(cleanUrl, depth))
                 {
                     //if (Already_Searched_URL.ContainsKey(cleanUrl))//This URL has been searched before
                     //    continue;
@@ -1025,7 +1045,7 @@ namespace PageExtractor
         }
 
 
-        void test_write_info_to_file(string html, string url)
+        bool test_write_info_to_file(string html, string url)
         {
             HTMLAnalysisBox HTMLBox = new HTMLAnalysisBox();
             HTMLBox.Load_PlainText(html);
@@ -1092,7 +1112,7 @@ namespace PageExtractor
 
             //Verify both product name and price are got
             if (product_name == null || product_price == null)
-                return;
+                return false;
             
             #region Product Image URL
 
@@ -1277,7 +1297,8 @@ namespace PageExtractor
 
             int number_affected = my_sql_database.ExecuteNonQuery(sql_query);
 
-            Console.WriteLine(number_affected.ToString() + " row(s) affected");
+            //Console.WriteLine(number_affected.ToString() + " row(s) affected");
+            return true;
 
             //Console.Read();
 

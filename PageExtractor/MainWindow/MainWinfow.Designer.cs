@@ -129,6 +129,7 @@
             this.button1_ReadFile.TabIndex = 5;
             this.button1_ReadFile.Text = "ReadFile";
             this.button1_ReadFile.UseVisualStyleBackColor = true;
+            this.button1_ReadFile.Visible = false;
             this.button1_ReadFile.Click += new System.EventHandler(this.button1_ReadFile_Click);
             // 
             // MainWinfow

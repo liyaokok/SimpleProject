@@ -20,7 +20,7 @@ namespace MainWindow
         //Web settings
         private ConfigurationManagement config_manage_box = null;
         public WebAnalysisAttribute web_attribute = null;
-        string config_file_path = @"C:\PageExtractor\PageExtractor\PageExtractor\bin\Debug\config.ini";
+        string config_file_path = Environment.CurrentDirectory + "\\config.ini";
         string webName = "OfficeDepot";
 
 
