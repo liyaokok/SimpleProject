@@ -1398,8 +1398,8 @@ namespace PageExtractor
             #endregion
 
             //write resule to databse
-            //SQLDatabase my_sql_database = new SQLDatabase("98.239.198.3,1433\\SQLEXPRESS", "TestDatabase", "sa", "ly23909475");
-            SQLDatabase my_sql_database = new SQLDatabase("127.0.0.1,1433\\SQLEXPRESS", "TestDatabase", "sa", "ly23909475");
+            //SQLDatabase my_sql_database = new SQLDatabase("98.239.198.3,1433\\SQLEXPRESS", "TestDatabase", "sa", "phones1");
+            SQLDatabase my_sql_database = new SQLDatabase("127.0.0.1,1433\\SQLEXPRESS", "TestDatabase", "sa", "phones1");
 
             //get table size
             string sql_query_table_size = "select count(*) from TestDatabase.dbo.OfficeDepot";

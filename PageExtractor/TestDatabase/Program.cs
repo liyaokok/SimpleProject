@@ -15,8 +15,8 @@ namespace TestDatabase
             #region Basic Demo
             /*
             //连接字符串
-            //string connConfig = "Data Source=liyaokokPC\\SQLEXPRESS;Initial Catalog=TestDatabase;User ID=sa;Password=ly23909475";
-            string connConfig = "Data Source=.\\SQLEXPRESS;Initial Catalog=TestDatabase;User ID=sa;Password=ly23909475";
+            //string connConfig = "Data Source=liyaokokPC\\SQLEXPRESS;Initial Catalog=TestDatabase;User ID=sa;Password=phones1";
+            string connConfig = "Data Source=.\\SQLEXPRESS;Initial Catalog=TestDatabase;User ID=sa;Password=phones1";
             //连接对象
             SqlConnection sql_Connection = new SqlConnection(connConfig);
 
@@ -62,7 +62,7 @@ namespace TestDatabase
 
             #region Dataset
 
-            /*SQLDatabase my_sql_database = new SQLDatabase(".\\SQLEXPRESS", "TestDatabase", "sa", "ly23909475");
+            /*SQLDatabase my_sql_database = new SQLDatabase(".\\SQLEXPRESS", "TestDatabase", "sa", "phones1");
 
             string sql_query = "select * from [TestTable]";
 
@@ -77,7 +77,7 @@ namespace TestDatabase
             }*/
             #endregion
 
-            SQLDatabase my_sql_database = new SQLDatabase(".\\SQLEXPRESS", "TestDatabase", "sa", "ly23909475");
+            SQLDatabase my_sql_database = new SQLDatabase(".\\SQLEXPRESS", "TestDatabase", "sa", "phones1");
 
             //string sql_query = "insert into [TestDatabase].dbo.TestTable values (4, 'Product4')";
             //string sql_query = "delete from [TestDatabase].dbo.TestTable where [Index] = 4";
