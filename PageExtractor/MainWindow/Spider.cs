@@ -635,7 +635,9 @@ namespace PageExtractor
             //Yao
             //const string pattern = @"href=[\s\S]*?[;\\]+?";
             //const string pattern = "href *?= *?[\\w\"\\.:/;=\\+]+";
-            const string pattern = "href *?= *?[\\\"][\\s\\S]*?[;\\\"]";
+            //const string pattern = "href *?= *?[\\\"][\\s\\S]*?[;\\\"]"; 
+            //const string pattern = "href *?= *?[\"][\\s\\S]*?[;\"]"; //156 matches
+            const string pattern = "\\bhref *?= *?\"\\S*?[\"]"; //
 
             Regex r = new Regex(pattern, RegexOptions.IgnoreCase);
             MatchCollection m = r.Matches(html);
@@ -837,24 +839,48 @@ namespace PageExtractor
             //return links;
         }
 
-        private bool UrlExists(string url,int url_depth)
+        private bool UrlExists(string url,int url_depth)//这个link在这个深度是否搜索过了呢？或者将来要搜索他呢？
         {
             //判断当前url是否存在。如存在，则比较深度。如果深度更浅，则替换当前哈希表内容并返回true
-            bool temp_result = _urlsUnload.ContainsKey(url);
-            bool result = temp_result || _urlsLoaded.ContainsKey(url);
+            bool Unload_result = _urlsUnload.ContainsKey(url);//未搜索列表
+            bool Loaded_result = _urlsLoaded.ContainsKey(url); //已搜索列表
 
-            if (result && _urlsLoaded.ContainsKey(url))
+
+            /*
+            if (Unload_result == true)//在urlsUnload队列中还含有这个url,查看深度
             {
-                int old_depth = (int)_urlsLoaded[url];
-                int new_depth = url_depth;
+                int Unload_depth = (int)_urlsUnload[url];
 
-                if (new_depth < old_depth)
+                if (url_depth < Unload_depth)
                 {
-                    _urlsLoaded[url] = new_depth;
-                    return false;
+                    _urlsUnload[url] = url_depth;
+                    return true;
+                }
+                else
+                {
+                    return true;
                 }
             }
 
+            if (Loaded_result == true)
+            {
+                int Loaded_depth = (int)_urlsLoaded[url];
+
+                if (url_depth < Loaded_depth)
+                {
+                    _urlsLoaded.Remove(url);
+                    return false;
+                }
+                else
+                {
+                    return true;
+                }
+            }
+
+            return false;*/
+
+
+            bool result = Unload_result || Loaded_result;
             return result;
         }
 
@@ -874,7 +900,7 @@ namespace PageExtractor
             //if base url is from OfficeDepot, the last three letters can't be '.do'
             if (_baseUrl.ToLower().Contains("officedepot.com"))
             {
-                if ( (url.Length >= 3 && url.Substring(url.Length - 3, 3).Equals(".do")) || (url.Length >= 4 && url.Substring(url.Length - 4, 4).Equals(".do/")))
+                if ((url.Length >= 3 && url.Substring(url.Length - 3, 3).Equals(".do")) || (url.Length >= 4 && url.Substring(url.Length - 4, 4).Equals(".do/")) || (url.Length >= 4 && url.Substring(url.Length - 4, 4).Equals(".do?")))
                 {
                     return false;
                 }
@@ -897,6 +923,46 @@ namespace PageExtractor
                 {
                     cleanUrl = cleanUrl.Substring(0, end);
                 }
+                //replace HTML Character Entities: non-breaking space, <,>,&,¢,£,¥,€,©,®,™,×,÷
+                if (cleanUrl.Contains("&nbsp;"))
+                    cleanUrl.Replace("&nbsp;", " ");
+                if (cleanUrl.Contains("&lt;"))
+                    cleanUrl.Replace("&lt;", "<");
+                if (cleanUrl.Contains("&gt;"))
+                    cleanUrl.Replace("&gt;", ">");
+                if (cleanUrl.Contains("&amp;"))
+                    cleanUrl.Replace("&amp;", "$");
+                if (cleanUrl.Contains("&cent;"))
+                    cleanUrl.Replace("&cent;", "¢");
+                if (cleanUrl.Contains("&pound;"))
+                    cleanUrl.Replace("&pound;", "£");
+                if (cleanUrl.Contains("&yen;"))
+                    cleanUrl.Replace("&yen;", "¥");
+                if (cleanUrl.Contains("&euro;"))
+                    cleanUrl.Replace("&euro;", "€");
+                if (cleanUrl.Contains("&copy;"))
+                    cleanUrl.Replace("&copy;", "©");
+                if (cleanUrl.Contains("&reg;"))
+                    cleanUrl.Replace("&reg;", "®");
+                if (cleanUrl.Contains("&trade;"))
+                    cleanUrl.Replace("&trade;", "™");
+                if (cleanUrl.Contains("&times;"))
+                    cleanUrl.Replace("&times;", "×");
+                if (cleanUrl.Contains("&divide;"))
+                    cleanUrl.Replace("&divide;", "÷");
+
+
+                //如果url含有';',取;前部分.eg  http://www.officedepot.com/a/products/786867/Office-Snax-Mini-Salt-Pepper-Set/;jsessionid=0000lH09EuuGW_I0WPzACytlCmZ:17h4h7dc6
+
+                if (cleanUrl.Contains(";"))
+                {
+                    int _cemic_index = cleanUrl.IndexOf(';');
+
+                    cleanUrl = cleanUrl.Substring(0, _cemic_index);
+                }
+
+
+
                 //cleanUrl = cleanUrl.TrimEnd('/');
                 if (UrlAvailable(cleanUrl, depth))
                 {
@@ -1016,7 +1082,43 @@ namespace PageExtractor
 
         private string Trim_HTML_Text(string _rawString)
         {
-            string _temp_raw_string = _rawString.Replace("&nbsp","").Trim();
+            string _temp_raw_string = _rawString;
+
+            _temp_raw_string = _temp_raw_string.Replace("&nbsp;", " ");
+
+            _temp_raw_string = _temp_raw_string.Replace("&lt;", "<");
+
+            _temp_raw_string = _temp_raw_string.Replace("&gt;", ">");
+
+            _temp_raw_string = _temp_raw_string.Replace("&amp;", "&");
+
+            _temp_raw_string = _temp_raw_string.Replace("&cent;", "¢");
+
+            _temp_raw_string = _temp_raw_string.Replace("&pound;", "£");
+
+            _temp_raw_string = _temp_raw_string.Replace("&yen;", "¥");
+
+            _temp_raw_string = _temp_raw_string.Replace("&euro;", "€");
+
+            _temp_raw_string = _temp_raw_string.Replace("&copy;", "©");
+
+            _temp_raw_string = _temp_raw_string.Replace("&reg;", "®");
+
+            _temp_raw_string = _temp_raw_string.Replace("&trade;", "™");
+
+            _temp_raw_string = _temp_raw_string.Replace("&times;", "×");
+
+            _temp_raw_string = _temp_raw_string.Replace("&divide;", "÷");
+
+            _temp_raw_string = _temp_raw_string.Replace("&quot;", "\"");
+
+            _temp_raw_string = _temp_raw_string.Replace("\t", "");
+
+            _temp_raw_string = _temp_raw_string.Replace("\n", "");
+
+            _temp_raw_string = _temp_raw_string.Replace("\r", "");
+
+            _temp_raw_string = _temp_raw_string.Trim();
 
             return _temp_raw_string;
         }
@@ -1059,6 +1161,7 @@ namespace PageExtractor
             {
                 product_name = product_name_node.InnerText;
                 product_name = Trim_HTML_Text(product_name);
+                product_name = product_name.Replace("'", "''");
             }
             /*HtmlAgilityPack.HtmlNode product_name_node = HTMLBox.Select_SingleNode(_mainWinform.web_attribute.ProductName_XPath[0]);
 
@@ -1141,6 +1244,7 @@ namespace PageExtractor
                 if (html_attribute_product_image_URL != null) 
                 {
                     product_image_URL = html_attribute_product_image_URL.Value.ToString();
+                    product_image_URL = product_image_URL.Replace("'", "''"); ;
                 }
             }
             #endregion
@@ -1158,6 +1262,8 @@ namespace PageExtractor
                     //HTML uses '&nbsp' representing white space
                     if (product_desctiption_node != null)
                         product_description = product_description + Trim_HTML_Text(product_desctiption_node.InnerText.Trim()) + "\n";
+
+                    product_description = product_description.Replace("'", "''"); 
                 }
             }
 
@@ -1171,6 +1277,8 @@ namespace PageExtractor
             {
                 product_brandname = html_node_BrandName.InnerText;
                 product_brandname = Trim_HTML_Text(product_brandname);
+
+                product_brandname = product_brandname.Replace("'", "''"); 
             }
 
             #endregion
@@ -1184,6 +1292,8 @@ namespace PageExtractor
 
                 product_manufacture_number = html_node_ManufactureNumber.InnerText;
                 product_manufacture_number = Trim_HTML_Text(product_manufacture_number);
+
+                product_manufacture_number = product_manufacture_number.Replace("'", "''");
             }
 
             #endregion
@@ -1196,6 +1306,8 @@ namespace PageExtractor
             {
                 product_manufacture_name = html_node_ManufactureName.InnerText;
                 product_manufacture_name = Trim_HTML_Text(product_manufacture_name);
+
+                product_manufacture_name = product_manufacture_name.Replace("'", "''"); 
             }
 
             #endregion
@@ -1208,6 +1320,8 @@ namespace PageExtractor
             {
                 product_upc_number = html_node_UPCNumber.InnerText;
                 product_upc_number = Trim_HTML_Text(product_upc_number);
+
+                product_upc_number = product_upc_number.Replace("'", "''");
             }
 
             #endregion
@@ -1220,6 +1334,8 @@ namespace PageExtractor
             {
                 product_modelname = html_node_ModelName.InnerText;
                 product_modelname = Trim_HTML_Text(product_modelname);
+
+                product_modelname = product_modelname.Replace("'", "''");
             }
             #endregion
 
@@ -1293,9 +1409,14 @@ namespace PageExtractor
             string table_size = dataset_table_size.Tables[0].Rows[0][0].ToString();
 
 
-            string sql_query = "INSERT INTO OfficeDepot ([index],URL,ProductName,CurrentPrice,ImageURL,ProductDescription,BrandName,ManufacturerNumber,ManufacturerName,UPCNumber,Model) VALUES (" + table_size.ToString() + ",'" + url + "','" + product_name + "'," + product_price + ",'" + product_image_URL + "','" + product_description + "','" + product_brandname + "','" + product_manufacture_number + "','" + product_manufacture_name + "','" + product_upc_number + "','" + product_modelname + "')";
+            string sql_query = @"INSERT INTO OfficeDepot ([index],URL,ProductName,CurrentPrice,ImageURL,BrandName,ManufacturerNumber,ManufacturerName,UPCNumber,Model) VALUES (" + table_size.ToString() + ",'" + url + "','" + product_name + "'," + product_price + ",'" + product_image_URL + "','" + product_brandname + "','" + product_manufacture_number + "','" + product_manufacture_name + "','" + product_upc_number + "','" + product_modelname + "'"+")";
 
             int number_affected = my_sql_database.ExecuteNonQuery(sql_query);
+
+
+            string sql_query2 = @"UPDATE OfficeDepot SET ProductDescription='" + product_description + "' WHERE [Index]=" + table_size.ToString();
+
+            int number_affected2 = my_sql_database.ExecuteNonQuery(sql_query2);
 
             //Console.WriteLine(number_affected.ToString() + " row(s) affected");
             return true;
